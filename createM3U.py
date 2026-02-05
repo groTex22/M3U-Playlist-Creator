@@ -70,9 +70,10 @@ def create_m3u(folder_path, target_exts):
         m3u_path = os.path.join(folder, base_name + ".m3u")
 
         with open(m3u_path, "w", encoding="utf-8") as f:
-            f.write("#EXTM3U\n")
             for file_path in sorted(file_list):
-                f.write(file_path + "\n")
+                # возьмем только название файла, т.к пишем в ту же папку, полный путь не нужен
+                filename_only = os.path.basename(file_path)
+                f.write(filename_only + "\n")
 
         print("Создан плейлист:", m3u_path)
 
