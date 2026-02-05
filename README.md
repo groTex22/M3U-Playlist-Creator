@@ -1,4 +1,4 @@
-# 🎵 M3U Playlist Creator
+# M3U Playlist Creator
 
 Автоматическое создание `.m3u` плейлистов на базе **Python**.
 
