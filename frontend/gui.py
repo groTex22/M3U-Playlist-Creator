@@ -1,8 +1,10 @@
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import os
+import threading
 
 from backend.createM3U import create_m3u
+from backend.logger import log_queue
 from .window_utils import center_window
 
 
@@ -83,7 +85,10 @@ class App(ctk.CTk):
         # === 4. Логирование действий ===
         self.log = ctk.CTkTextbox(self, height=140)
         self.log.pack(fill="both", expand=True, padx=20, pady=(0, 20))
-        self.log.configure(state="disabled")
+        #self.log.configure(state="disabled")
+
+        self.check_log_queue()
+
 
     def center_window(self):
         """Метод для размещения окна по центру экрана"""
@@ -119,7 +124,16 @@ class App(ctk.CTk):
         self.log.configure(state="normal")
         self.log.insert("end", text + "\n")
         self.log.see("end")
-        self.log.configure(state="disabled")
+        #self.log.configure(state="disabled")
+
+    def check_log_queue(self):
+        """Чтение очереди логов из бэкенда"""
+        while not log_queue.empty():
+            msg = log_queue.get()
+            self.write_log(msg) 
+
+        # опрашиваем очередь каждые 100 мс
+        self.after(100, self.check_log_queue)       
 
     def run_script(self):
         folder = self.path_entry.get().strip()
@@ -134,14 +148,29 @@ class App(ctk.CTk):
         if not os.path.exists(folder):
             messagebox.showerror("Ошибка", "Указанный путь не существует!")
             return
+        
+        self.write_log("Запуск обработки...")
 
-        try:
-            # Запуск createM3U.py
-            count = create_m3u(folder, exts)
-            self.write_log(f"Количество созданных файлов: {count} \n✅ Создание плейлиста завершилось успешно!")
+        # Заблочили кнопку запуска, пока идет обработка
+        self.run_btn.configure(state="disabled")
 
-        except Exception as e:
-                    messagebox.showerror("Ошибка", f"Произошла ошибка: {e}")
+        # Функция запуска
+        def worker(): 
+            try:
+                # Запуск createM3U.py
+                count = create_m3u(folder, exts)
+                log_queue.put(f"Количество созданных файлов: {count}")
+                log_queue.put(f"✅ Создание плейлиста завершилось успешно!")
+
+            except Exception as e:
+                import traceback
+                log_queue.put(f"❌ Ошибка: {e}") 
+                log_queue.put(traceback.format_exc())
+            finally:
+                self.after(0, lambda: self.run_btn.configure(state="normal"))
+
+        # И запускаем в отдельном потоке
+        threading.Thread(target=worker, daemon=False).start()     
 
 def run_gui():
     app = App()
