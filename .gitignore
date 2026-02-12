@@ -22,5 +22,5 @@ __pycache__/
 Thumbs.db
 
 # # Игнорируем спеки и текстовые файлы
-.spec
-.txt
+*.spec
+*.txt
