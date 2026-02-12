@@ -3,7 +3,7 @@ name: PR Release
 on:
   pull_request:
     types: [closed]
-    branches: [main]
+    branches: [Main]
 
 jobs:
   build-and-release:
@@ -15,9 +15,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        if (Test-Path requirements.txt) {
+          pip install -r requirements.txt
+        }
+    
+    
     - name: Build EXE
       run: |
-        pip install pyinstaller
         pyinstaller --onefile --noconsole --name ${{ github.event.repository.name }} main.py
     
     - name: Release
