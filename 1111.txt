@@ -1,0 +1,2 @@
+команда для создания exe файла
+pyinstaller --onefile --noconsole --name "M3U Playlist Creator" main.py
